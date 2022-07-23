@@ -1,0 +1,69 @@
+import asyncio
+from app.bot import handler #Importing Decorators
+from app.models import Account #Importing Account model Django
+from app.bot.Message import Message
+
+# Обьект user: Account
+# user() - автоматически подставит ник в зависимости от настройки гиперссылки
+# user.input(str) - преобразует числа "1к\все\1k\all" в числа, вернет None в случае провала.
+# user.digit_number(int) преобразует число - к примереу 10000 в обьект str -> "10.000"
+# в остальном можно работать с ним как и раньше :)
+
+buttons = (
+		{"name": "Нажми меня!", "payload": "clic", "color": "positive"},
+		{"name": "Не нажимай меня!", "payload": "not_click", "color": "negative"},
+		{"name": "Test", "command": "callback_or", "color": "negative"}
+		)
+
+
+# пример работы Callback
+@handler.callback(name="callback_or")
+async def _(msg: Message, user: Account) -> None:
+	msg.inline_buttons(buttons)
+	await msg.edit(f"Callback support")
+
+# Прмиер payload: в случае если в клиенте не поддерживается callback - обязателен при применении callback
+@handler.payload(name="callback_or")
+async def _(msg: Message, user: Account) -> None:
+	await msg("Callback unsupport")
+
+# пример работы как обычно
+@handler.message(name = 'типизация')
+async def _(msg: Message, user: Account) -> None:
+	text: str = f"{user.username}, Привет!!"
+
+	await msg(text, reply_to=msg.id)
+
+# пример с user()
+@handler.message(name = 'ха') #Decorator Message
+async def _(msg: Message, user: Account) -> None:
+	text: str = f"{user()} Привет!"
+
+	msg.inline_buttons(buttons)
+	await msg(text)
+
+@handler.message(name = ['start','начать']) #Decorator Message
+async def _(msg: Message, user: Account) -> None:
+	text: str = f"{user.username} Привет!"
+
+	msg.inline_buttons(buttons)
+	await msg(text)
+
+@handler.payload(name = "clic")
+async def _(msg: Message, user: Account) -> None:
+	text: str = f"{user.username} Спасибо :)"
+
+	msg.inline_buttons(buttons)
+	await msg(text)
+
+@handler.payload(name = "not_click")
+async def _(msg: Message, user: Account) -> None:
+	msg.inline_buttons(buttons)
+	await msg(f"{user.username} Я же говорил не нажимай меня. ;_;")
+
+# Прмиер работы с msg.text/msg.id/msg(reply_to)
+@handler.message(name = 'test') #Decorator Message
+async def _(msg: Message, user: Account) -> None:
+
+	msg.inline_buttons(buttons)
+	await msg(f"text: {msg.text}|-|{msg.id}", reply_to=msg.id)
